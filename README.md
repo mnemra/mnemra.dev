@@ -1,2 +1,0 @@
-# mnemra.dev
-Mnemra Website
