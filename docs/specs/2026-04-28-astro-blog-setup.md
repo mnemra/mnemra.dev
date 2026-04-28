@@ -24,7 +24,7 @@ Convert the static `index.html` landing into an Astro 6 site so blog posts can s
 - The site SHALL expose a blog index at `/blog` listing all published posts ordered by `date` descending.
 - The site SHALL render individual blog posts at `/blog/<slug>` from markdown files in `src/content/blog/`.
 - The site SHALL validate every blog post's frontmatter against a Zod schema at build time; missing required fields SHALL fail the build.
-- The site SHALL render hero images via `astro:assets <Picture>` to emit a `<picture>` element with `<source>` entries for avif and webp; inline markdown images SHALL be processed by Astro's image pipeline with responsive `srcset` and native lazy loading.
+- The site SHALL render hero images via `astro:assets <Picture>` to emit a `<picture>` element with `<source>` entries for avif and webp. Inline markdown images SHALL be processed by Astro's image pipeline: format optimization (webp/avif) SHALL apply to all inline images, and responsive `srcset` SHALL apply when the source asset's largest dimension exceeds Astro's responsive threshold (typically 640px). Native lazy loading SHALL apply to all inline images.
 - The site SHALL build via `npm run build` and emit static output to `dist/`.
 - The site MUST preserve the existing Cloudflare Pages auto-deploy connection — the build command and output dir SHALL be set so Cloudflare Pages picks up the new build without manual intervention.
 - The site MUST preserve Open Graph and Twitter card meta tags exactly as in current `index.html` (title, description, og:image at `/og.png`, twitter:card `summary_large_image`).
@@ -271,8 +271,8 @@ Not applicable — fully static site.
 - [ ] `npm run build` produces `dist/blog/<slug>/index.html` for each non-draft post
 - [ ] Post renders title (`<h1>`), date, tags, hero (when present) as optimized `<picture>`, then markdown body
 - [ ] Hero image uses `astro:assets <Picture>` with `loading="lazy"`, rendering a `<picture>` element with avif + webp `<source>` entries
-- [ ] Inline markdown images render with responsive `srcset` from Astro's image pipeline
-- [ ] Inline markdown images also optimize via Astro's image pipeline
+- [ ] Inline markdown images receive format optimization from Astro's image pipeline; assets exceeding Astro's responsive threshold (typically 640px) render with responsive `srcset`
+- [ ] The placeholder post's inline image asset is large enough to exercise the responsive `srcset` path (verifies the pipeline end-to-end)
 - [ ] Document `<title>` is `{post.title} — Mnemra` (or similar consistent format)
 - [ ] `<meta name="description">` set from post's `summary`
 - [ ] OG image falls back to the global `/og.png` if post has no hero
@@ -358,6 +358,8 @@ Not applicable — fully static site.
 ## Changelog
 
 - **2026-04-28 (post-design-review):** Fidelity fix to hero image AC. Earlier draft and Task 5 acceptance text said `<Image>`, but the Scenario "Blog post renders with image" required a `<picture>` element with avif + webp sources. Astro's `<Image>` component renders `<img srcset>` (webp-only); `<Picture>` is the component that emits `<picture>` with `<source type="image/avif">` and `<source type="image/webp">`. Acceptance text and Risk note now reference `<Picture>` consistently. Added an explicit AC for inline markdown image responsive `srcset`. No scope change — this aligns the implementation directives with the user-facing Scenario, which has always been the contract.
+
+- **2026-04-28 (post-revision):** Inline-image AC refined. Astro's image pipeline does not emit `srcset` for assets below its responsive threshold (typically 640px); the previous AC language implied it would. Updated language to: format optimization always applies, responsive `srcset` applies when source dimensions exceed the threshold. Added an explicit AC requiring the placeholder post's inline asset to be large enough to exercise the `srcset` path — without that, the pipeline isn't verified end-to-end.
 
 ## Done Criteria
 
