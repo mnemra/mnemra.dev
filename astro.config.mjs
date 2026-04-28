@@ -8,4 +8,7 @@ export default defineConfig({
   output: 'static',
   site: 'https://mnemra.dev',
   adapter: cloudflare(),
+  image: {
+    layout: 'constrained',
+  },
 });
