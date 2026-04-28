@@ -24,7 +24,7 @@ Convert the static `index.html` landing into an Astro 6 site so blog posts can s
 - The site SHALL expose a blog index at `/blog` listing all published posts ordered by `date` descending.
 - The site SHALL render individual blog posts at `/blog/<slug>` from markdown files in `src/content/blog/`.
 - The site SHALL validate every blog post's frontmatter against a Zod schema at build time; missing required fields SHALL fail the build.
-- The site SHALL render images in blog posts via `astro:assets <Image>` — automatic format conversion to avif/webp where supported, responsive `srcset`, native lazy loading.
+- The site SHALL render hero images via `astro:assets <Picture>` to emit a `<picture>` element with `<source>` entries for avif and webp; inline markdown images SHALL be processed by Astro's image pipeline with responsive `srcset` and native lazy loading.
 - The site SHALL build via `npm run build` and emit static output to `dist/`.
 - The site MUST preserve the existing Cloudflare Pages auto-deploy connection — the build command and output dir SHALL be set so Cloudflare Pages picks up the new build without manual intervention.
 - The site MUST preserve Open Graph and Twitter card meta tags exactly as in current `index.html` (title, description, og:image at `/og.png`, twitter:card `summary_large_image`).
@@ -265,12 +265,13 @@ Not applicable — fully static site.
 **Type:** frontend
 **Depends on:** Task 3
 
-**What:** Dynamic route rendering each blog post. Renders title, date, tags, optional hero via `<Image>`, rendered markdown body. "← Blog" back link at top. Post `<title>` and `<meta description>` set from the post's frontmatter.
+**What:** Dynamic route rendering each blog post. Renders title, date, tags, optional hero via `<Picture>` (emits a `<picture>` element with avif + webp `<source>` entries), rendered markdown body. "← Blog" back link at top. Post `<title>` and `<meta description>` set from the post's frontmatter.
 
 **Acceptance Criteria:**
 - [ ] `npm run build` produces `dist/blog/<slug>/index.html` for each non-draft post
 - [ ] Post renders title (`<h1>`), date, tags, hero (when present) as optimized `<picture>`, then markdown body
-- [ ] Hero image uses `astro:assets <Image>` with `loading="lazy"`
+- [ ] Hero image uses `astro:assets <Picture>` with `loading="lazy"`, rendering a `<picture>` element with avif + webp `<source>` entries
+- [ ] Inline markdown images render with responsive `srcset` from Astro's image pipeline
 - [ ] Inline markdown images also optimize via Astro's image pipeline
 - [ ] Document `<title>` is `{post.title} — Mnemra` (or similar consistent format)
 - [ ] `<meta name="description">` set from post's `summary`
@@ -352,7 +353,11 @@ Not applicable — fully static site.
 
 - **First-time Astro for the implementing developer.** Prior frontend work has been SvelteKit-focused. Astro shares Vite + component model + content patterns with SvelteKit; transferable skill but not zero-cost. The dispatch envelope SHOULD include a pointer to Astro 6 docs (https://docs.astro.build/) and the framework comparison cited in frontmatter as background reading.
 
-- **`<Image>` component requires defined `src`.** Posts with no hero must guard the hero render with a conditional in the post template (Task 5). Without the guard, building a no-hero post throws. The verify harness covers both branches (hero-present + hero-absent) on the placeholder + a generated empty-hero variant.
+- **`<Picture>` component requires defined `src`.** Posts with no hero must guard the hero render with a conditional in the post template (Task 5). Without the guard, building a no-hero post throws. The verify harness covers both branches (hero-present + hero-absent) on the placeholder + a generated empty-hero variant.
+
+## Changelog
+
+- **2026-04-28 (post-design-review):** Fidelity fix to hero image AC. Earlier draft and Task 5 acceptance text said `<Image>`, but the Scenario "Blog post renders with image" required a `<picture>` element with avif + webp sources. Astro's `<Image>` component renders `<img srcset>` (webp-only); `<Picture>` is the component that emits `<picture>` with `<source type="image/avif">` and `<source type="image/webp">`. Acceptance text and Risk note now reference `<Picture>` consistently. Added an explicit AC for inline markdown image responsive `srcset`. No scope change — this aligns the implementation directives with the user-facing Scenario, which has always been the contract.
 
 ## Done Criteria
 
