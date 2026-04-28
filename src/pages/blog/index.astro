@@ -1,0 +1,133 @@
+---
+import { getCollection } from 'astro:content';
+import '../../styles/ironworks.css';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+const posts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+}
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog — Mnemra</title>
+  <meta name="description" content="Writing from Mnemra — a context layer for MCP.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <style>
+    .blog-header {
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid rgba(176, 141, 87, 0.15);
+      padding-bottom: 1.5rem;
+    }
+    .blog-header h1 {
+      font-family: var(--font-heading);
+      font-weight: 900;
+      font-size: 2.5rem;
+      letter-spacing: 0.06em;
+      color: var(--raw-text-primary);
+      margin-bottom: 0;
+    }
+    .post-list {
+      list-style: none;
+    }
+    .post-item {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(176, 141, 87, 0.1);
+      padding-bottom: 2rem;
+    }
+    .post-item:last-child {
+      border-bottom: none;
+    }
+    .post-link {
+      text-decoration: none;
+      display: block;
+    }
+    .post-link:hover .post-title {
+      color: var(--raw-brass-light);
+    }
+    .post-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.375rem;
+      letter-spacing: 0.03em;
+      color: var(--raw-text-primary);
+      margin-bottom: 0.375rem;
+      transition: color 150ms ease;
+    }
+    .post-meta {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--raw-text-muted);
+      margin-bottom: 0.625rem;
+    }
+    .post-summary {
+      font-size: 1rem;
+      color: var(--raw-text-secondary);
+      line-height: 1.55;
+    }
+    .post-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--raw-brass);
+      border: 1px solid rgba(176, 141, 87, 0.35);
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+    }
+    .empty-state {
+      color: var(--raw-text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+    @media (max-width: 640px) {
+      .blog-header h1 { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body data-layout="document">
+  <main class="container">
+    <nav class="blog-nav" style="margin-bottom: 2rem;">
+      <a href="/">← Home</a>
+    </nav>
+
+    <header class="blog-header">
+      <h1>Blog</h1>
+    </header>
+
+    {posts.length === 0 ? (
+      <p class="empty-state">No posts yet.</p>
+    ) : (
+      <ul class="post-list">
+        {posts.map((post) => (
+          <li class="post-item">
+            <a href={`/blog/${post.id}`} class="post-link">
+              <div class="post-title">{post.data.title}</div>
+              <div class="post-meta">{formatDate(post.data.date)}</div>
+              <p class="post-summary">{post.data.summary}</p>
+              {post.data.tags.length > 0 && (
+                <div class="post-tags">
+                  {post.data.tags.map((tag) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+</body>
+</html>
