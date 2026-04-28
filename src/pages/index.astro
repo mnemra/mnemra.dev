@@ -1,0 +1,91 @@
+---
+import '../styles/ironworks.css';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Mnemra — context layer for MCP</title>
+  <meta name="description" content="A memory server for agents. MCP in. Postgres out. Rust, pgvector, self-hosted or managed. Apache-2.0.">
+
+  <!-- Open Graph / social share -->
+  <meta property="og:title" content="Mnemra — context layer for MCP">
+  <meta property="og:description" content="A memory server for agents. MCP in. Postgres out.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mnemra.dev">
+  <meta property="og:image" content="https://mnemra.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mnemra — context layer for MCP">
+  <meta name="twitter:description" content="A memory server for agents. MCP in. Postgres out.">
+
+  <!-- Fonts: Ironworks families from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+
+<body>
+  <main class="container">
+
+    <!-- Avatar: Cinzel M on near-black, Ironworks nameplate -->
+    <svg class="avatar" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mnemra">
+      <title>Mnemra</title>
+      <rect width="400" height="400" fill="#1a1612" rx="4" ry="4"/>
+      <radialGradient id="glow" cx="50%" cy="46%" r="55%">
+        <stop offset="0%" stop-color="#2a2219" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#1a1612" stop-opacity="0"/>
+      </radialGradient>
+      <rect width="400" height="400" fill="url(#glow)"/>
+      <rect x="0" y="0" width="400" height="2" fill="#b08d57"/>
+      <rect x="0" y="398" width="400" height="2" fill="#8a6a35" fill-opacity="0.6"/>
+      <text x="200" y="258" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="280" text-anchor="middle" fill="#d4af70">M</text>
+      <rect x="130" y="296" width="140" height="2" fill="#b08d57"/>
+      <polygon points="200,314 206,320 200,326 194,320" fill="#b08d57" fill-opacity="0.75"/>
+    </svg>
+
+    <div class="eyebrow">Context Layer &mdash; MCP</div>
+    <h1>MNEMRA</h1>
+    <p class="pronunciation">pronounced NEM-ra</p>
+
+    <div class="body-copy">
+      <p>A memory server for agents. MCP in. Postgres out.</p>
+      <p>Rust. pgvector. Self-hosted or managed.</p>
+      <p>Apache-2.0.</p>
+    </div>
+
+    <ul class="fragments">
+      <li>Persistent context across agent sessions</li>
+      <li>Per-tenant isolation, mTLS, row-level security</li>
+      <li>Runs anywhere Postgres runs</li>
+    </ul>
+
+    <!--
+      Waitlist form. Buttondown embed endpoint.
+      If submissions fail, swap buttondown.com -> buttondown.email (legacy domain still served during migration).
+    -->
+    <form class="cta-row"
+          action="https://buttondown.com/api/emails/embed-subscribe/peter.manahan"
+          method="post"
+          target="popupwindow"
+          onsubmit="window.open('https://buttondown.com/peter.manahan', 'popupwindow')">
+      <input type="email" name="email" placeholder="your@email" aria-label="Email address" required>
+      <button type="submit">Waitlist</button>
+    </form>
+
+    <div class="footer">
+      <div class="status-line">Pre-alpha &mdash; 2026-10 alpha &mdash; 2027-04 beta</div>
+      <div class="social">
+        <a href="https://github.com/mnemra">GitHub</a>
+        <a href="https://bsky.app/profile/mnemra.dev">Bluesky</a>
+        <a href="https://www.linkedin.com/company/mnemra">LinkedIn</a>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>
