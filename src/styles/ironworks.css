@@ -212,6 +212,11 @@ h1 {
   .social { flex-wrap: wrap; gap: 1rem 1.5rem; }
 }
 
+/* Document-layout pages (blog index, blog posts) start at top, not vertically centered */
+body[data-layout="document"] {
+  justify-content: flex-start;
+}
+
 /* Blog-shared layout */
 .blog-nav {
   font-family: var(--font-heading);
@@ -221,11 +226,13 @@ h1 {
   text-transform: uppercase;
 }
 .blog-nav a {
+  display: inline-block;
   color: var(--raw-text-secondary);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: color 150ms ease, border-color 150ms ease;
-  padding-bottom: 2px;
+  padding: 12px 0;
+  min-height: 44px;
 }
 .blog-nav a:hover {
   color: var(--raw-brass-light);

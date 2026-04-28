@@ -1,6 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
-import { Image } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import '../../styles/ironworks.css';
 
 export async function getStaticPaths() {
@@ -156,7 +156,8 @@ function formatDate(date: Date): string {
       text-decoration: none;
       border-bottom: 1px solid transparent;
       transition: color 150ms ease, border-color 150ms ease;
-      padding-bottom: 2px;
+      padding: 12px 0;
+      min-height: 44px;
     }
     .back-link:hover {
       color: var(--raw-brass-light);
@@ -167,7 +168,7 @@ function formatDate(date: Date): string {
     }
   </style>
 </head>
-<body>
+<body data-layout="document">
   <main class="container">
     <a href="/blog" class="back-link">&larr; Blog</a>
 
@@ -185,8 +186,9 @@ function formatDate(date: Date): string {
       </header>
 
       {post.data.hero && (
-        <Image
+        <Picture
           src={post.data.hero}
+          formats={['avif', 'webp']}
           alt={post.data.title}
           class="post-hero"
           loading="lazy"

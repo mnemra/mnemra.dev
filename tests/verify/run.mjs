@@ -79,6 +79,7 @@ assert(indexHtml.includes('Per-tenant isolation, mTLS, row-level security'), 'fr
 assert(indexHtml.includes('Runs anywhere Postgres runs'), 'fragment 3 present');
 assert(indexHtml.includes('action="https://buttondown.com/api/emails/embed-subscribe/peter.manahan"'), 'Buttondown form action');
 assert(indexHtml.includes("window.open('https://buttondown.com/peter.manahan'"), 'Buttondown onsubmit window.open');
+assert(indexHtml.includes('href="/blog"'), 'Blog nav link in landing footer');
 assert(indexHtml.includes('href="https://github.com/mnemra"'), 'GitHub social link');
 assert(indexHtml.includes('href="https://bsky.app/profile/mnemra.dev"'), 'Bluesky social link');
 assert(indexHtml.includes('href="https://www.linkedin.com/company/mnemra"'), 'LinkedIn social link');
@@ -147,6 +148,10 @@ const astroFiles = existsSync(astroDir)
   ? (await import('fs')).readdirSync(astroDir).filter(f => f.includes('hello-hero'))
   : [];
 assert(astroFiles.length > 0, `hero image optimized (found: ${astroFiles.join(', ')})`);
+// Hero image: must render as <picture> element with avif + webp sources (spec Scenario "Blog post renders with image")
+assert(postHtml.includes('<picture'), 'hero rendered as <picture> element');
+assert(postHtml.includes('type="image/avif"'), 'hero has avif <source>');
+assert(postHtml.includes('type="image/webp"'), 'hero has webp <source>');
 
 // ─── 6. Draft exclusion ───────────────────────────────────────────────────────
 
