@@ -23,6 +23,6 @@ The schema is simple: a context entry has a tenant ID, a session ID, a timestamp
 
 ## What's next
 
-The alpha ships 2026-10. Beta follows 2027-04. If you want early access, join the waitlist on the landing page.
+The alpha is in development; beta will follow. If you want early access, join the waitlist on the landing page.
 
 The source is Apache-2.0. The repo is at [github.com/mnemra](https://github.com/mnemra).
