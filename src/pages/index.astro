@@ -1,5 +1,10 @@
 ---
 import '../styles/ironworks.css';
+
+const repos = [
+  { label: 'mnemra/mnemra-core', url: 'https://github.com/mnemra/mnemra-core', blurb: 'The engine that runs Mnemra.' },
+  { label: 'mnemra/governance', url: 'https://github.com/mnemra/governance', blurb: 'Governs how Mnemra is developed.' },
+];
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -69,6 +74,20 @@ import '../styles/ironworks.css';
       <li>Per-tenant isolation, mTLS, row-level security</li>
       <li>Runs anywhere Postgres runs</li>
     </ul>
+
+    <div class="repos">
+      <div class="eyebrow">On GitHub</div>
+      <ul class="repo-list">
+        {repos.map((repo) => (
+          <li class="repo-list-item">
+            <a href={repo.url} class="repo-link" rel="noopener">
+              <span class="repo-label">{repo.label}</span>
+              <span class="repo-blurb">{repo.blurb}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
 
     <!--
       Subscribe form. Buttondown embed endpoint.

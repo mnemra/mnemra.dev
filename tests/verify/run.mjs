@@ -104,6 +104,13 @@ assert(indexHtml.includes('href="https://github.com/mnemra"'), 'GitHub social li
 assert(indexHtml.includes('href="https://bsky.app/profile/mnemra.dev"'), 'Bluesky social link');
 assert(indexHtml.includes('href="https://www.linkedin.com/company/mnemra"'), 'LinkedIn social link');
 
+// Repo-list section (data-driven, task #2301)
+assert(indexHtml.includes('>On GitHub<'), 'repo-list eyebrow "On GitHub" present');
+assert(indexHtml.includes('href="https://github.com/mnemra/mnemra-core"') && indexHtml.includes('rel="noopener"'), 'mnemra-core repo link present (rel=noopener)');
+assert(indexHtml.includes('href="https://github.com/mnemra/governance"'), 'governance repo link present');
+assert(indexHtml.includes('The engine that runs Mnemra.'), 'mnemra-core blurb present');
+assert(indexHtml.includes('Governs how Mnemra is developed.'), 'governance blurb present');
+
 // Meta tags — synced to Direction A message
 const DIRECTION_A_DESC = 'Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.';
 assert(indexHtml.includes(`meta name="description" content="${DIRECTION_A_DESC}"`), 'meta description synced to Direction A');
