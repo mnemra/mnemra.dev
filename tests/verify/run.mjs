@@ -74,25 +74,54 @@ assert(h1Pos < pronPos, 'pronunciation line after h1');
 
 assert(indexHtml.includes('Context Layer'), 'eyebrow text present');
 assert(indexHtml.includes('class="avatar"'), 'SVG avatar present');
-assert(indexHtml.includes('Persistent context across agent sessions'), 'fragment 1 present');
-assert(indexHtml.includes('Per-tenant isolation, mTLS, row-level security'), 'fragment 2 present');
-assert(indexHtml.includes('Runs anywhere Postgres runs'), 'fragment 3 present');
+
+// Direction A hero copy (locked, task #2252)
+assert(indexHtml.includes('Your agents forget. Mnemra remembers.'), 'hero lede present');
+assert(indexHtml.includes("Every session starts cold; Mnemra keeps the context so the next one doesn't."), 'hero cold-session line present');
+assert(indexHtml.includes('MCP in. Postgres out. Rust, pgvector.'), 'hero spec line present');
+assert(indexHtml.includes('Self-hosted or managed. Apache-2.0.'), 'hero license line present');
+
+// Fragments — fragment 1 dropped (redundant with hero lede), other two kept
+assert(!indexHtml.includes('Persistent context across agent sessions'), 'fragment "Persistent context..." dropped (redundant with hero lede)');
+assert(indexHtml.includes('Per-tenant isolation, mTLS, row-level security'), 'fragment: per-tenant isolation present');
+assert(indexHtml.includes('Runs anywhere Postgres runs'), 'fragment: runs anywhere Postgres runs present');
+
+// Subscribe CTA (was "Waitlist")
 assert(indexHtml.includes('action="https://buttondown.com/api/emails/embed-subscribe/peter.manahan"'), 'Buttondown form action');
 assert(indexHtml.includes("window.open('https://buttondown.com/peter.manahan'"), 'Buttondown onsubmit window.open');
-assert(indexHtml.includes('href="/blog"'), 'Blog nav link in landing footer');
+assert(indexHtml.includes('>Subscribe<'), 'CTA button label is Subscribe');
+assert(indexHtml.includes('New posts by email. Project news rides along.'), 'CTA microcopy present');
+
+// Blog discovery — top-right header link + inline hero link; footer link dropped
+const blogHrefCount = (indexHtml.match(/href="\/blog"/g) || []).length;
+assert(blogHrefCount === 2, 'exactly 2 /blog links: header nav + inline hero CTA', `found ${blogHrefCount}`);
+assert(indexHtml.includes('class="site-header blog-nav"'), 'top-right header Blog link wrapper present');
+assert(indexHtml.includes('Read the blog') && indexHtml.includes('&rarr;'), 'inline "Read the blog →" link present');
+const footerSection = indexHtml.slice(indexHtml.indexOf('class="footer"'));
+assert(!footerSection.includes('>Blog<'), 'footer Blog link removed (header + inline own discovery now)');
+
 assert(indexHtml.includes('href="https://github.com/mnemra"'), 'GitHub social link');
 assert(indexHtml.includes('href="https://bsky.app/profile/mnemra.dev"'), 'Bluesky social link');
 assert(indexHtml.includes('href="https://www.linkedin.com/company/mnemra"'), 'LinkedIn social link');
 
-// Meta tags
+// Repo-list section (data-driven, task #2301)
+assert(indexHtml.includes('>On GitHub<'), 'repo-list eyebrow "On GitHub" present');
+assert(indexHtml.includes('href="https://github.com/mnemra/mnemra-core"') && indexHtml.includes('rel="noopener"'), 'mnemra-core repo link present (rel=noopener)');
+assert(indexHtml.includes('href="https://github.com/mnemra/governance"'), 'governance repo link present');
+assert(indexHtml.includes('The engine that runs Mnemra.'), 'mnemra-core blurb present');
+assert(indexHtml.includes('Governs how Mnemra is developed.'), 'governance blurb present');
+
+// Meta tags — synced to Direction A message
+const DIRECTION_A_DESC = 'Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.';
+assert(indexHtml.includes(`meta name="description" content="${DIRECTION_A_DESC}"`), 'meta description synced to Direction A');
 assert(indexHtml.includes('og:title" content="Mnemra — context layer for MCP"'), 'og:title');
-assert(indexHtml.includes('og:description" content="A memory server for agents. MCP in. Postgres out."'), 'og:description');
+assert(indexHtml.includes(`og:description" content="${DIRECTION_A_DESC}"`), 'og:description synced to Direction A');
 assert(indexHtml.includes('og:type" content="website"'), 'og:type');
 assert(indexHtml.includes('og:url" content="https://mnemra.dev"'), 'og:url');
 assert(indexHtml.includes('og:image" content="https://mnemra.dev/og.png"'), 'og:image');
 assert(indexHtml.includes('twitter:card" content="summary_large_image"'), 'twitter:card');
 assert(indexHtml.includes('twitter:title" content="Mnemra — context layer for MCP"'), 'twitter:title');
-assert(indexHtml.includes('twitter:description" content="A memory server for agents. MCP in. Postgres out."'), 'twitter:description');
+assert(indexHtml.includes(`twitter:description" content="${DIRECTION_A_DESC}"`), 'twitter:description synced to Direction A');
 
 // CSS custom properties — all Ironworks tokens
 const CSS_PROPS = [
