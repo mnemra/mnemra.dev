@@ -8,17 +8,17 @@ import '../styles/ironworks.css';
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Mnemra — context layer for MCP</title>
-  <meta name="description" content="A memory server for agents. MCP in. Postgres out. Rust, pgvector, self-hosted or managed. Apache-2.0.">
+  <meta name="description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
 
   <!-- Open Graph / social share -->
   <meta property="og:title" content="Mnemra — context layer for MCP">
-  <meta property="og:description" content="A memory server for agents. MCP in. Postgres out.">
+  <meta property="og:description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://mnemra.dev">
   <meta property="og:image" content="https://mnemra.dev/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mnemra — context layer for MCP">
-  <meta name="twitter:description" content="A memory server for agents. MCP in. Postgres out.">
+  <meta name="twitter:description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
 
   <!-- Fonts: Ironworks families from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +31,10 @@ import '../styles/ironworks.css';
 
 <body>
   <main class="container">
+
+    <div class="site-header blog-nav">
+      <a href="/blog">Blog</a>
+    </div>
 
     <!-- Avatar: Cinzel M on near-black, Ironworks nameplate -->
     <svg class="avatar" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mnemra">
@@ -53,19 +57,21 @@ import '../styles/ironworks.css';
     <p class="pronunciation">pronounced NEM-ra</p>
 
     <div class="body-copy">
-      <p>A memory server for agents. MCP in. Postgres out.</p>
-      <p>Rust. pgvector. Self-hosted or managed.</p>
-      <p>Apache-2.0.</p>
+      <p><strong>Your agents forget. Mnemra remembers.</strong></p>
+      <p>A memory server for AI agents. Every session starts cold; Mnemra keeps the context so the next one doesn't.</p>
+      <p>MCP in. Postgres out. Rust, pgvector.</p>
+      <p>Self-hosted or managed. Apache-2.0.</p>
     </div>
 
+    <a href="/blog" class="hero-blog-link">Read the blog &rarr;</a>
+
     <ul class="fragments">
-      <li>Persistent context across agent sessions</li>
       <li>Per-tenant isolation, mTLS, row-level security</li>
       <li>Runs anywhere Postgres runs</li>
     </ul>
 
     <!--
-      Waitlist form. Buttondown embed endpoint.
+      Subscribe form. Buttondown embed endpoint.
       If submissions fail, swap buttondown.com -> buttondown.email (legacy domain still served during migration).
     -->
     <form class="cta-row"
@@ -74,13 +80,13 @@ import '../styles/ironworks.css';
           target="popupwindow"
           onsubmit="window.open('https://buttondown.com/peter.manahan', 'popupwindow')">
       <input type="email" name="email" placeholder="your@email" aria-label="Email address" required>
-      <button type="submit">Waitlist</button>
+      <button type="submit">Subscribe</button>
     </form>
+    <p class="cta-microcopy">New posts by email. Project news rides along.</p>
 
     <div class="footer">
       <div class="status-line">Pre-alpha &mdash; alpha and beta dates to follow</div>
       <div class="social">
-        <a href="/blog">Blog</a>
         <a href="https://github.com/mnemra">GitHub</a>
         <a href="https://bsky.app/profile/mnemra.dev">Bluesky</a>
         <a href="https://www.linkedin.com/company/mnemra">LinkedIn</a>

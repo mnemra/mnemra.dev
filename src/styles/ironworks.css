@@ -115,11 +115,11 @@ h1 {
   color: var(--raw-brass);
 }
 
-/* Waitlist CTA — brass gradient button, Ironworks button treatment */
+/* Subscribe CTA — brass gradient button, Ironworks button treatment */
 .cta-row {
   display: flex;
   gap: 0;
-  margin-bottom: 3.5rem;
+  margin-bottom: 0.75rem; /* microcopy sits tight below; .cta-microcopy carries the old 3.5rem gap to footer */
   border: 1px solid rgba(176, 141, 87, 0.30);
   border-radius: 2px;
   overflow: hidden;
@@ -163,6 +163,41 @@ h1 {
   filter: brightness(1.1);
 }
 .cta-row button:focus {
+  outline: 2px solid var(--raw-brass-light);
+  outline-offset: 2px;
+}
+
+/* CTA microcopy — muted supporting line under the subscribe form */
+.cta-microcopy {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--raw-text-muted);
+  margin-bottom: 3.5rem;
+}
+
+/* Site header — top-right Blog nav link, reuses .blog-nav typography */
+.site-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+/* Inline blog CTA near the hero — body-copy tone, not nav caps */
+.hero-blog-link {
+  display: inline-block;
+  margin-bottom: 2.5rem;
+  color: var(--raw-brass-light);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: border-color 150ms ease;
+}
+.hero-blog-link:hover {
+  border-bottom-color: var(--raw-brass-light);
+}
+.hero-blog-link:focus {
   outline: 2px solid var(--raw-brass-light);
   outline-offset: 2px;
 }
