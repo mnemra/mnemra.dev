@@ -11,7 +11,7 @@ import { spawnSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
-const DIST = join(ROOT, 'dist');
+const DIST = join(ROOT, 'dist', 'client');
 
 let passed = 0;
 let failed = 0;
