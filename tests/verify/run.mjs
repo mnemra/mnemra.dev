@@ -8,6 +8,7 @@ import { readFileSync, existsSync, writeFileSync, rmSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync, spawn } from 'child_process';
+import { createServer } from 'net';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
@@ -103,7 +104,7 @@ assert(indexHtml.includes('href="https://github.com/mnemra"'), 'GitHub social li
 assert(indexHtml.includes('href="https://bsky.app/profile/mnemra.dev"'), 'Bluesky social link');
 assert(indexHtml.includes('href="https://www.linkedin.com/company/mnemra"'), 'LinkedIn social link');
 
-// Repo-list section (data-driven, task #2301)
+// Repo-list section (data-driven)
 assert(indexHtml.includes('>On GitHub<'), 'repo-list eyebrow "On GitHub" present');
 assert(indexHtml.includes('href="https://github.com/mnemra/mnemra-core"') && indexHtml.includes('rel="noopener"'), 'mnemra-core repo link present (rel=noopener)');
 assert(indexHtml.includes('href="https://github.com/mnemra/governance"'), 'governance repo link present');
@@ -276,54 +277,125 @@ async function waitForServer(port, maxMs = 10000) {
   return false;
 }
 
-// Find an available port (try 4321 first, fallback to 4322)
+// Port is hardcoded, not a fallback range: a busy 4321 almost always means a
+// leaked server from a previous run (see the pre-flight check below), and a
+// silent fallback to 4322 would mask exactly that problem — the same
+// false-green risk as raising the timeout or retrying. Fail loud and name
+// the real problem instead of quietly moving to another port.
 const PREVIEW_PORT = 4321;
 
-try {
-  previewProc = spawn('npm', ['run', 'preview', '--', '--port', String(PREVIEW_PORT), '--host', 'localhost'], {
-    cwd: ROOT,
-    detached: false,
+function isPortInUse(port) {
+  return new Promise((resolvePort) => {
+    // Bind to the literal 127.0.0.1, not the hostname 'localhost': Node's
+    // hostname resolution can land on ::1 (IPv6) depending on getaddrinfo
+    // order, which would silently probe a different address than the one
+    // wrangler/workerd actually binds (its own error output names the IPv4
+    // address explicitly) and produce a false negative.
+    const tester = createServer()
+      .once('error', () => resolvePort(true))
+      .once('listening', () => {
+        tester.close(() => resolvePort(false));
+      })
+      .listen(port, '127.0.0.1');
   });
+}
 
-  const up = await waitForServer(PREVIEW_PORT, 12000);
-
-  if (!up) {
-    fail('preview server start', 'server did not start within 12s');
-  } else {
-    async function checkContentType(path, expectedType, label) {
-      try {
-        const res = await fetch(`http://localhost:${PREVIEW_PORT}${path}`);
-        const ct = res.headers.get('content-type') || '';
-        assert(res.status === 200 && ct.startsWith(expectedType), label, `status=${res.status} content-type=${ct}`);
-      } catch (e) {
-        fail(label, String(e));
-      }
+// Reap the whole process tree spawned for the preview server, not just the
+// direct child. `wrangler dev` is really wrangler's JS launcher -> wrangler's
+// bundled CLI -> workerd, and none of those call setsid themselves — so
+// spawning with `detached: true` makes our child the leader of a new process
+// group, and signalling the *group* (`-pid`) reaches every process in that
+// chain. Signalling only `previewProc.pid` (the old behavior) only ever
+// reached the top of the chain; workerd survived every run and kept
+// listening on this port after the harness exited.
+async function reapPreviewProcess() {
+  if (!previewProc || !previewProc.pid) return;
+  const pid = previewProc.pid;
+  try {
+    process.kill(-pid, 'SIGTERM');
+  } catch (e) {
+    // ESRCH: the group is already gone (process exited on its own) — fine,
+    // nothing to reap. Anything else is worth surfacing.
+    if (e.code !== 'ESRCH') {
+      console.error(`Warning: failed to signal preview process group (pid ${pid}): ${e.message}`);
     }
-
-    await checkContentType('/', 'text/html', 'GET / returns 200 text/html');
-    await checkContentType('/blog/', 'text/html', 'GET /blog/ returns 200 text/html');
-    await checkContentType('/blog/hello-mnemra/', 'text/html', 'GET /blog/hello-mnemra/ returns 200 text/html');
-    await checkContentType('/favicon.png', 'image/png', 'GET /favicon.png returns 200 image/png');
-
-    // ─── 10. Back-link navigation ─────────────────────────────────────────────
-    console.log('\n[10] Blog back-link resolves');
-    try {
-      const postPage = await fetch(`http://localhost:${PREVIEW_PORT}/blog/hello-mnemra/`);
-      const postText = await postPage.text();
-      // Check absolute /blog href
-      assert(postText.includes('href="/blog"'), 'back link uses absolute /blog path');
-    } catch (e) {
-      fail('back link check', String(e));
-    }
-
-    // ─── 11. Empty-state scenario ─────────────────────────────────────────────
-    // Already verified via DOM check above; static check only
-    console.log('\n[11] Empty blog state (static check)');
-    pass('empty state renders "No posts yet." when no published posts', 'verified via build with zero posts');
+    return;
   }
-} finally {
-  if (previewProc) {
-    previewProc.kill('SIGTERM');
+  // Give the group a moment to exit cleanly before handing control back, so
+  // a leak check run immediately after this script exits sees an empty port.
+  await new Promise((resolveWait) => {
+    const timer = setTimeout(resolveWait, 2000);
+    previewProc.once('exit', () => {
+      clearTimeout(timer);
+      resolveWait();
+    });
+  });
+}
+
+let previewOutput = '';
+
+if (await isPortInUse(PREVIEW_PORT)) {
+  fail(
+    'preview server start',
+    `port ${PREVIEW_PORT} already in use before the preview server was started — probable leaked server from a previous run; refusing to start rather than burn 12s reporting a false timeout. Check for a leaked wrangler/workerd process.`
+  );
+} else {
+  try {
+    // Invoke wrangler directly rather than `npm run preview`
+    // (`npm run build && wrangler dev`): sections 6-8 above already built
+    // `dist/` (and left it clean), so `preview`'s embedded rebuild is pure
+    // overhead paid for inside this 12s start budget — and serving a fresh
+    // rebuild instead of the dist/ this harness actually verified was itself
+    // a correctness gap, not just a speed one.
+    previewProc = spawn(
+      join(ROOT, 'node_modules', '.bin', 'wrangler'),
+      ['dev', '--port', String(PREVIEW_PORT), '--host', 'localhost'],
+      { cwd: ROOT, detached: true, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    previewProc.stdout.on('data', (d) => { previewOutput += d.toString(); });
+    previewProc.stderr.on('data', (d) => { previewOutput += d.toString(); });
+
+    const up = await waitForServer(PREVIEW_PORT, 12000);
+
+    if (!up) {
+      fail(
+        'preview server start',
+        `server did not start within 12s\n--- captured stdout/stderr ---\n${previewOutput.trim() || '(no output captured)'}`
+      );
+    } else {
+      async function checkContentType(path, expectedType, label) {
+        try {
+          const res = await fetch(`http://localhost:${PREVIEW_PORT}${path}`);
+          const ct = res.headers.get('content-type') || '';
+          assert(res.status === 200 && ct.startsWith(expectedType), label, `status=${res.status} content-type=${ct}`);
+        } catch (e) {
+          fail(label, String(e));
+        }
+      }
+
+      await checkContentType('/', 'text/html', 'GET / returns 200 text/html');
+      await checkContentType('/blog/', 'text/html', 'GET /blog/ returns 200 text/html');
+      await checkContentType('/blog/hello-mnemra/', 'text/html', 'GET /blog/hello-mnemra/ returns 200 text/html');
+      await checkContentType('/favicon.png', 'image/png', 'GET /favicon.png returns 200 image/png');
+
+      // ─── 10. Back-link navigation ─────────────────────────────────────────────
+      console.log('\n[10] Blog back-link resolves');
+      try {
+        const postPage = await fetch(`http://localhost:${PREVIEW_PORT}/blog/hello-mnemra/`);
+        const postText = await postPage.text();
+        // Check absolute /blog href
+        assert(postText.includes('href="/blog"'), 'back link uses absolute /blog path');
+      } catch (e) {
+        fail('back link check', String(e));
+      }
+
+      // ─── 11. Empty-state scenario ─────────────────────────────────────────────
+      // Already verified via DOM check above; static check only
+      console.log('\n[11] Empty blog state (static check)');
+      pass('empty state renders "No posts yet." when no published posts', 'verified via build with zero posts');
+    }
+  } finally {
+    await reapPreviewProcess();
   }
 }
 
