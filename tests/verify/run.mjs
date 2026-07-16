@@ -75,16 +75,15 @@ assert(h1Pos < pronPos, 'pronunciation line after h1');
 assert(indexHtml.includes('Context Layer'), 'eyebrow text present');
 assert(indexHtml.includes('class="avatar"'), 'SVG avatar present');
 
-// Direction A hero copy (locked, task #2252)
-assert(indexHtml.includes('Your agents forget. Mnemra remembers.'), 'hero lede present');
-assert(indexHtml.includes("Every session starts cold; Mnemra keeps the context so the next one doesn't."), 'hero cold-session line present');
-assert(indexHtml.includes('MCP in. Postgres out. Rust, pgvector.'), 'hero spec line present');
-assert(indexHtml.includes('Self-hosted or managed. Apache-2.0.'), 'hero license line present');
+// Vision-first hero copy (locked, commit dc69637) — two prose paragraphs;
+// pin one distinctive fragment per paragraph rather than the whole block.
+assert(indexHtml.includes('keeps context alive between sessions'), 'hero para 1: persistent-context claim present');
+assert(indexHtml.includes('single binary with Postgres built in'), 'hero para 2: single-binary Postgres claim present');
 
-// Fragments — fragment 1 dropped (redundant with hero lede), other two kept
+// Fragments — fragment 1 dropped (redundant with hero lede); fragment 2 updated to self-host framing
 assert(!indexHtml.includes('Persistent context across agent sessions'), 'fragment "Persistent context..." dropped (redundant with hero lede)');
 assert(indexHtml.includes('Per-tenant isolation, mTLS, row-level security'), 'fragment: per-tenant isolation present');
-assert(indexHtml.includes('Runs anywhere Postgres runs'), 'fragment: runs anywhere Postgres runs present');
+assert(indexHtml.includes('No external services to run'), 'fragment: no external services to run present');
 
 // Subscribe CTA (was "Waitlist")
 assert(indexHtml.includes('action="https://buttondown.com/api/emails/embed-subscribe/peter.manahan"'), 'Buttondown form action');
@@ -111,17 +110,17 @@ assert(indexHtml.includes('href="https://github.com/mnemra/governance"'), 'gover
 assert(indexHtml.includes('The engine that runs Mnemra.'), 'mnemra-core blurb present');
 assert(indexHtml.includes('Governs how Mnemra is developed.'), 'governance blurb present');
 
-// Meta tags — synced to Direction A message
-const DIRECTION_A_DESC = 'Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.';
-assert(indexHtml.includes(`meta name="description" content="${DIRECTION_A_DESC}"`), 'meta description synced to Direction A');
+// Meta tags — synced to current landing copy (description/og/twitter share one string)
+const META_DESCRIPTION = 'Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.';
+assert(indexHtml.includes(`meta name="description" content="${META_DESCRIPTION}"`), 'meta description synced to current copy');
 assert(indexHtml.includes('og:title" content="Mnemra — context layer for MCP"'), 'og:title');
-assert(indexHtml.includes(`og:description" content="${DIRECTION_A_DESC}"`), 'og:description synced to Direction A');
+assert(indexHtml.includes(`og:description" content="${META_DESCRIPTION}"`), 'og:description synced to current copy');
 assert(indexHtml.includes('og:type" content="website"'), 'og:type');
 assert(indexHtml.includes('og:url" content="https://mnemra.dev"'), 'og:url');
 assert(indexHtml.includes('og:image" content="https://mnemra.dev/og.png"'), 'og:image');
 assert(indexHtml.includes('twitter:card" content="summary_large_image"'), 'twitter:card');
 assert(indexHtml.includes('twitter:title" content="Mnemra — context layer for MCP"'), 'twitter:title');
-assert(indexHtml.includes(`twitter:description" content="${DIRECTION_A_DESC}"`), 'twitter:description synced to Direction A');
+assert(indexHtml.includes(`twitter:description" content="${META_DESCRIPTION}"`), 'twitter:description synced to current copy');
 
 // CSS custom properties — all Ironworks tokens
 const CSS_PROPS = [

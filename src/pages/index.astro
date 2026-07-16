@@ -13,17 +13,17 @@ const repos = [
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Mnemra — context layer for MCP</title>
-  <meta name="description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
+  <meta name="description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
 
   <!-- Open Graph / social share -->
   <meta property="og:title" content="Mnemra — context layer for MCP">
-  <meta property="og:description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
+  <meta property="og:description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://mnemra.dev">
   <meta property="og:image" content="https://mnemra.dev/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mnemra — context layer for MCP">
-  <meta name="twitter:description" content="Your agents forget. Mnemra remembers. A memory server for AI agents over MCP, backed by Postgres and pgvector. Self-hosted or managed. Apache-2.0.">
+  <meta name="twitter:description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
 
   <!-- Fonts: Ironworks families from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,17 +62,15 @@ const repos = [
     <p class="pronunciation">pronounced NEM-ra</p>
 
     <div class="body-copy">
-      <p><strong>Your agents forget. Mnemra remembers.</strong></p>
-      <p>A memory server for AI agents. Every session starts cold; Mnemra keeps the context so the next one doesn't.</p>
-      <p>MCP in. Postgres out. Rust, pgvector.</p>
-      <p>Self-hosted or managed. Apache-2.0.</p>
+      <p><strong>Context and memory for the agents and people working the same problems.</strong> Every session starts cold, so today each team building on agents writes its own way to carry context forward. Mnemra keeps context alive between sessions; it's meant to be that layer, built once, so each team doesn't rebuild it.</p>
+      <p>Agents reach it over MCP. Self-host is a single binary with Postgres built in, and scales out to your own Postgres when you need it. It's early yet: agent communication is the first piece being built. Apache-2.0.</p>
     </div>
 
     <a href="/blog" class="hero-blog-link">Read the blog &rarr;</a>
 
     <ul class="fragments">
       <li>Per-tenant isolation, mTLS, row-level security</li>
-      <li>Runs anywhere Postgres runs</li>
+      <li>No external services to run</li>
     </ul>
 
     <div class="repos">
@@ -104,7 +102,7 @@ const repos = [
     <p class="cta-microcopy">New posts by email. Project news rides along.</p>
 
     <div class="footer">
-      <div class="status-line">Pre-alpha &mdash; alpha and beta dates to follow</div>
+      <div class="status-line">Built in the open</div>
       <div class="social">
         <a href="https://github.com/mnemra">GitHub</a>
         <a href="https://bsky.app/profile/mnemra.dev">Bluesky</a>
