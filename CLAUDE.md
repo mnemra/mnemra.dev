@@ -78,19 +78,30 @@ Color must never be the only carrier of meaning (accessibility) — use shape an
 
 ## Voice — anything published under the Mnemra name
 
-Landing copy, blog posts, release notes, social posts, email. One line: **write like an engineer who respects the reader's time — technical, concrete, declarative, dry. No marketing, no hedging, no buzzwords.** Reference points: Dan Luu, Julia Evans, the Fly.io and Tailscale blogs, early Stripe engineering posts.
+Landing copy, blog posts, release notes, social posts, email. One line: **write like an engineer who respects the reader's time — technical, concrete, declarative, dry. No marketing, no hedging, no buzzwords.** Reference points: Dan Luu, Julia Evans, the Fly.io and Tailscale blogs, early Stripe engineering posts. This is a product register, dry and impersonal by design — a register choice, and not a licence to compress the reasoning out.
+
+**Truth**
+
+This one governs what may be *asserted*, rather than how a sentence is phrased, and everything below sits under it. It is a values position, not a style preference: it does not trade against reach, conversion, or momentum. A draft that buys visibility with an overclaim is out of bounds, not a tradeoff to weigh.
+
+- **Present tense is reserved for what is true and runnable today.** Anything else is marked as intent in the sentence itself — "we're building toward", "target architecture", "planned for v1.0" — never present-tense-by-implication. Declarative phrasing and the bans on hedging govern *how* a claim is worded; neither one licenses present tense for something that isn't built.
+- **Omission that leaves a false impression counts as shading.** Take a claim like "ships as a single binary, nothing else to run": it goes shaded the moment scale needs an external database and the sentence doesn't say so, because the claim is true of the default configuration, silent on the limit, and the reader carries away something nobody actually said. Put the limit in the sentence that makes the claim.
+- **No fabricated social proof.** No invented users, no invented testimonials, no metric without its denominator.
+- **This is a review criterion, not only an authoring note.** It binds the pass that clears copy to publish as much as the pass that writes it, and it covers landing copy, README, release notes, social posts, and launch material alike.
+
+Dev-tools readers punish overclaiming. That's true, and it is a consequence of holding the rule rather than the reason to hold it.
 
 **Attributes**
-- **Terse** — short sentences carry more weight than long ones; cut half the words after the first pass.
+- **Terse** — no wasted content, with the relations left intact. Not short sentences: a long sentence is fine when every clause earns its place and the connectives carry the joins, and the real failure here is a run of short assertions with the logic between them left for the reader to splice. Cut a clause that adds nothing, but keep one whose removal would delete a relation, a purpose, or a qualification. The reference points above are the calibration — dense and plain, not clipped.
 - **Concrete** — specific tech (Rust, pgvector, MCP, Postgres) beats abstract categories ("infrastructure", "solutions"); names and numbers over adjectives.
-- **Declarative** — "Mnemra is X," not "Mnemra can be seen as X"; avoid hedging verbs (seems, might, could be) when you can just say it.
+- **Declarative** — "Mnemra is X," not "Mnemra can be seen as X"; avoid hedging verbs (seems, might, could be) when you can just say it, and when X is true today. Where it isn't, the declarative sentence is about the intent ("we're building X"), not about X.
 - **Show, don't tell** — a code snippet beats a paragraph describing the code; let the example carry the claim.
 - **Chiselled** — every phrase earns its place; no throat-clearing ("In this post we'll explore…"), no padding, no "it's worth noting that".
 
 **Never**
 - Buzzwords / marketing verbs: unlock, leverage, empower, transform, revolutionize, seamless, synergy, robust, cutting-edge, best-in-class, next-generation, game-changing. If it could appear on a conference-booth sign, kill it.
 - Outcome-promises without a mechanism ("10x your productivity", "agents that just work").
-- Hedge-stacking and over-qualification — commit or don't.
+- Hedge-stacking and over-qualification — commit or don't. Naming a limit is not hedging, and it stays.
 - Throat-clearing openers ("In today's rapidly evolving landscape of…").
 - AI-tell parallel structures (escalating triples like "fast, flexible, and future-ready"; "not X but Y" with a strawman X; adjective stacks like "powerful, scalable, modern").
 - Stock AI vocabulary: "delve into", "tapestry", "navigate the landscape", "at the intersection of", "paradigm shift".
@@ -108,4 +119,4 @@ Landing copy, blog posts, release notes, social posts, email. One line: **write 
 - Prefer "self-hostable" over "on-prem", "managed tier" over "cloud offering", "alpha / beta / v1.0" over "release stages".
 - Avoid "solution", "platform" (use "server" or "tool"), "AI-powered" (redundant here).
 
-Voice rules are heuristics, not laws — if a piece works and breaks one, keep it. When in doubt, write the sentence two ways and pick the shorter one.
+Voice rules are heuristics, not laws — if a piece works and breaks one, keep it. The Truth block at the top is the exception: that one is a law, and a piece that works by breaking it doesn't ship. When in doubt on anything else, write the sentence two ways and keep the one that leaves the relation between the ideas on the page rather than the one that came out shorter.
