@@ -4,9 +4,10 @@ This repo is the **landing site and blog** for Mnemra, live at https://mnemra.de
 
 ## Stack
 
-- **Astro 6**, static output (`output: 'static'`), TypeScript strict.
+- **Astro 7**, static output (`output: 'static'`), TypeScript strict.
 - Deployed to **Cloudflare Workers** via `@astrojs/cloudflare` + Wrangler.
-- Vanilla CSS with the Ironworks design tokens (below). **No** Tailwind, component libraries, MDX, RSS, analytics, or CMS — the site is intentionally minimal and fully static.
+- Vanilla CSS with the Ironworks design tokens (below). **No** Tailwind, component libraries, MDX, analytics, or CMS — the site is intentionally minimal and fully static.
+- RSS feed (`@astrojs/rss`, at `/rss.xml`) and sitemap (`@astrojs/sitemap`, at `/sitemap-index.xml`) — the two syndication/discovery surfaces the site does ship.
 
 ## Deploying — merging to `main` is the publish
 
@@ -31,7 +32,7 @@ Both this repo and `mnemra-core` are **squash-merge only**.
 - Frontmatter is Zod-validated at build time. Required: `title`, `date` (ISO-8601), `summary` (1–280 chars). Optional: `tags` (string[]), `hero` (image), `draft` (bool, default false). A missing required field fails the build.
 - Post-local images go in `src/content/blog/_assets/`; reference inline as `![alt](./_assets/name.png)`. The hero image uses the `hero` frontmatter field and renders as an optimized `<picture>`.
 - **Diagrams** are authored in **D2**, compiled to SVG, and placed in `_assets/`. Generative image tools (e.g. Gemini/"nano banana") are for hero or section *art* only — never for labeled diagrams, which must be exact and versionable.
-- `draft: true` excludes a post from the production build and the `/blog` index.
+- `draft: true` excludes a post from the production build, the `/blog` index, the RSS feed, and the sitemap.
 
 ### Commands
 
@@ -40,7 +41,7 @@ Both this repo and `mnemra-core` are **squash-merge only**.
 - `just dev` — local dev server (`astro dev`).
 - `just build` — static build to `dist/` (validates all post frontmatter).
 - `just astro-check` — Astro's own TypeScript/component check (`astro check`).
-- `just verify` — DOM + SHALL-NOT checks (form action, meta tags, no RSS/MDX/analytics, no horizontal overflow) against the built `dist/`. **Depends on `build`** in the justfile: the harness reads the built `dist/`, not `src/`, so verifying a stale build is a false green — and there is no CI to catch it later. That dependency is why `verify: build` exists rather than a comment asking you to remember to rebuild first: it makes the stale-`dist/` mistake structurally impossible instead of merely documented.
+- `just verify` — DOM + SHALL-NOT checks (form action, meta tags, no MDX/analytics, RSS feed + sitemap content, no horizontal overflow) against the built `dist/`. **Depends on `build`** in the justfile: the harness reads the built `dist/`, not `src/`, so verifying a stale build is a false green — and there is no CI to catch it later. That dependency is why `verify: build` exists rather than a comment asking you to remember to rebuild first: it makes the stale-`dist/` mistake structurally impossible instead of merely documented.
 - `just check` — the full local gate (`astro-check` + `verify`). Run this before every PR; there is no CI behind it, so this is the only thing that catches a break.
 - `just deploy` — manual deploy fallback (`astro build && wrangler deploy`). Rarely needed — see Deploying above.
 

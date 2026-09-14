@@ -15,7 +15,13 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 
 function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  // timeZone: 'UTC' pinned explicitly — without it this renders in the
+  // build host's local zone, and only the Cloudflare adapter's workerd
+  // prerender environment (UTC) happens to make that match today. A
+  // non-UTC build host (e.g. prerenderEnvironment: 'node') would otherwise
+  // show a date-only post a day early or late. See tests/verify/run.mjs's
+  // RSS pubDate cross-check, which depends on this being UTC.
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit', timeZone: 'UTC' });
 }
 ---
 <!DOCTYPE html>
@@ -40,6 +46,7 @@ function formatDate(date: Date): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="alternate" type="application/rss+xml" title="Blog — Mnemra" href="/rss.xml">
   <style is:global>
     .post-header {
       margin-bottom: 2rem;
