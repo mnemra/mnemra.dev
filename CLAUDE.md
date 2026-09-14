@@ -24,7 +24,7 @@ gh api repos/mnemra/mnemra.dev/commits/<sha>/check-runs \
 
 **There is no GitHub Actions CI in this repo.** The Workers Build is the only automated check, and it runs *after* merge — by which point the result is already live. `just check` on your branch is therefore the *only* pre-merge gate that exists. Nothing else will catch a break for you.
 
-Both this repo and `mnemra-core` are **squash-merge only**.
+Both this repo and `mnemra-core` land by **rebase-merge only**. Squashing happens in the worktree before the push, one delivery per commit, never on the forge. The repo settings and this repo's `protect-main` ruleset allow no other merge method, so a squash or merge-commit button isn't available to fall back on.
 
 ## Blog authoring
 
