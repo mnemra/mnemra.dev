@@ -6,7 +6,9 @@ const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 const posts = allPosts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  // timeZone: 'UTC' pinned explicitly — see the same comment in
+  // src/pages/blog/[...slug].astro.
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit', timeZone: 'UTC' });
 }
 ---
 <!DOCTYPE html>
@@ -20,6 +22,7 @@ function formatDate(date: Date): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="alternate" type="application/rss+xml" title="Blog — Mnemra" href="/rss.xml">
   <style>
     .blog-header {
       margin-bottom: 2.5rem;

@@ -32,7 +32,7 @@ Convert the static `index.html` landing into an Astro 6 site so blog posts can s
 - The site MUST preserve the Buttondown waitlist form action URL and POST behavior; the form SHALL submit to `https://buttondown.com/api/emails/embed-subscribe/peter.manahan` and open `https://buttondown.com/peter.manahan` in a new window on submit.
 - The site MUST preserve the social-link footer (GitHub, Bluesky, LinkedIn) with current URLs.
 - The build SHALL NOT break the live site at https://mnemra.dev — the cutover SHALL go through a Cloudflare Pages preview deploy that is verified before the production deploy lands.
-- The implementing agent SHALL NOT add analytics, RSS, search, comments, MDX, or any blog UI features beyond list + read.
+- The implementing agent SHALL NOT add analytics, ~~RSS~~, search, comments, MDX, or any blog UI features beyond list + read. *(RSS clause superseded 2026-09-14 by #3560 — Peter ruled feeds = RSS and sitemap.)*
 - The implementing agent SHALL NOT migrate or backfill blog content — exactly one placeholder post is delivered to verify the pipeline; real content authoring is out of scope.
 - The implementing agent SHALL NOT add a CMS, headless backend, or runtime data store — the site is fully static.
 - The implementing agent SHALL NOT change the live domain, the Buttondown integration, or the social URLs.
@@ -41,7 +41,7 @@ Convert the static `index.html` landing into an Astro 6 site so blog posts can s
 
 ## Out of Scope
 
-- RSS feed
+- ~~RSS feed~~ *(superseded 2026-09-14 by #3560 — Peter ruled feeds = RSS and sitemap; RSS feed shipped at `/rss.xml`.)*
 - Site search
 - Comments / discussion
 - MDX (markdown with embedded components) — plain markdown only in V1
@@ -112,7 +112,7 @@ Convert the static `index.html` landing into an Astro 6 site so blog posts can s
 
 **Given** the production build completes successfully
 **When** the build artifacts and config are inspected
-**Then** all of the following hold: `dist/rss.xml` does not exist; `dist/feed.xml` does not exist; `astro.config.mjs` does not import or reference `@astrojs/mdx`; `dist/index.html` contains no `<script>` tags loading from known analytics domains (`plausible.io`, `googletagmanager.com`, `google-analytics.com`, `usefathom.com`, `mixpanel.com`, `posthog.com`); `astro.config.mjs` declares `output: 'static'`.
+**Then** all of the following hold: ~~`dist/rss.xml` does not exist; `dist/feed.xml` does not exist;~~ *(superseded 2026-09-14 by #3560 — `dist/rss.xml` is now required output; Peter ruled feeds = RSS and sitemap; see `tests/verify/run.mjs` sections [6] (draft-leak checks), [12]-[13] (feed/sitemap assertions) for the current coverage.)* `astro.config.mjs` does not import or reference `@astrojs/mdx`; `dist/index.html` contains no `<script>` tags loading from known analytics domains (`plausible.io`, `googletagmanager.com`, `google-analytics.com`, `usefathom.com`, `mixpanel.com`, `posthog.com`); `astro.config.mjs` declares `output: 'static'`.
 
 ### Scenario: Static asset MIME types correct
 
@@ -166,7 +166,7 @@ Not applicable — fully static site.
 - **Node version:** Use the latest LTS available on Cloudflare Pages (currently Node 22 LTS). Pin via `.nvmrc` or `engines` in `package.json`.
 - **Dependency tier:** All new deps SHALL use permissive licenses (MIT/Apache-2.0/BSD/ISC). Copyleft (LGPL/MPL/CDDL/EPL) requires pre-approval; strong copyleft (GPL/AGPL/SSPL) is blocked.
 - **Live-site cutover model:** mnemra.dev has not been publicly announced; brief downtime during cutover is acceptable. The cutover SHALL be: (1) implementing agent builds and verifies locally via `npm run preview` and the in-repo test scaffolding; (2) PR opened, reviewed, squash-merged to `main`; (3) maintainer deletes the existing Cloudflare Pages project for mnemra.dev; (4) maintainer creates a new Pages project on the same repo with the explicit Astro framework preset, build cmd `npm run build`, output dir `dist`, Node 22; (5) maintainer reattaches the custom domain. The implementing agent SHALL NOT push to `main` directly; the ruleset enforces PR-required.
-- **Test scaffolding (dev dependencies):** The spec requires several browser-level and DOM-level checks (visual element presence, meta-tag values, viewport overflow, Buttondown form behavior, navigation link resolution, MIME content-types, build artifact presence). The implementing agent SHALL add Playwright (or a comparable headless browser) and a DOM-parsing helper (Cheerio or equivalent) as `devDependencies` and provide an `npm run verify` script that exercises the SHALL-NOT mechanical checks (no RSS, no MDX, no analytics, output static) and the affirmative DOM checks (meta tags, custom properties, form action, social links). The spec does NOT require CI integration of these checks in V1; running `npm run verify` locally before opening the PR is sufficient.
+- **Test scaffolding (dev dependencies):** The spec requires several browser-level and DOM-level checks (visual element presence, meta-tag values, viewport overflow, Buttondown form behavior, navigation link resolution, MIME content-types, build artifact presence). The implementing agent SHALL add Playwright (or a comparable headless browser) and a DOM-parsing helper (Cheerio or equivalent) as `devDependencies` and provide an `npm run verify` script that exercises the SHALL-NOT mechanical checks (~~no RSS~~ *(superseded 2026-09-14 by #3560)*, no MDX, no analytics, output static) and the affirmative DOM checks (meta tags, custom properties, form action, social links). The spec does NOT require CI integration of these checks in V1; running `npm run verify` locally before opening the PR is sufficient.
 - **Lighthouse target (not a merge blocker):** Lighthouse scores ≥95 across Performance, Accessibility, Best Practices, SEO are a TARGET for the production deploy, not an enforced merge gate. The implementing agent SHOULD run `npx unlighthouse` (or `lighthouse` CLI) against the local preview, capture the scores in the PR description, and flag any score below 95 with a brief explanation. Future enforcement via Lighthouse CI is recommended (out of scope for V1).
 - **Repo layout:** New files live under `src/`, `public/` (move existing `favicon.png` and `og.png` to `public/`), `astro.config.mjs`, `package.json`, `tsconfig.json`, `.nvmrc`, `.gitignore` (extend existing). Existing root `index.html` is removed in the same commit that introduces the Astro version.
 - **Branch protection:** Work on a feature branch (`feat/astro-blog` or similar). PR squash-merges to `main`.

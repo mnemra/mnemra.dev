@@ -4,11 +4,12 @@
  * Run: npm run verify (after npm run build)
  */
 
-import { readFileSync, existsSync, writeFileSync, rmSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, rmSync, readdirSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync, spawn } from 'child_process';
 import { createServer } from 'net';
+import * as cheerio from 'cheerio';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
@@ -35,6 +36,27 @@ function assert(condition, scenario, detail = '') {
   else fail(scenario, detail);
 }
 
+// Shared by [6] (draft-leak check) and [13] (sitemap content check): reads
+// the sitemap index and returns each child sitemap's path + raw XML text.
+// @astrojs/sitemap may shard output across more than one child file.
+function loadChildSitemaps(sitemapIndexPath) {
+  if (!existsSync(sitemapIndexPath)) return [];
+  const $index = cheerio.load(readFileSync(sitemapIndexPath, 'utf8'), { xmlMode: true });
+  const childUrls = $index('sitemap > loc').toArray().map((el) => $index(el).text().trim());
+  return childUrls
+    .map((url) => join(DIST, url.split('/').pop()))
+    .filter((path) => existsSync(path))
+    .map((path) => ({ path, xml: readFileSync(path, 'utf8') }));
+}
+
+// Maps an absolute post URL (as it appears in an RSS <link>) back to the
+// built HTML file it names, so a feed's claims can be checked against the
+// actual page content.
+function distPathForPostUrl(url) {
+  const segments = url.replace('https://mnemra.dev', '').split('/').filter(Boolean);
+  return join(DIST, ...segments, 'index.html');
+}
+
 // ─── 1. Dist artifact checks ──────────────────────────────────────────────────
 
 console.log('\n[1] Dist artifact presence');
@@ -48,8 +70,8 @@ assert(existsSync(join(DIST, 'og.png')), 'dist/og.png exists');
 
 console.log('\n[2] SHALL-NOT mechanical checks');
 
-assert(!existsSync(join(DIST, 'rss.xml')), 'no dist/rss.xml');
-assert(!existsSync(join(DIST, 'feed.xml')), 'no dist/feed.xml');
+// RSS and sitemap are no longer SHALL-NOT: #3560 added both deliberately.
+// See [12] and [13] below for what replaced these two checks.
 
 const configSrc = readFileSync(join(ROOT, 'astro.config.mjs'), 'utf8');
 assert(!configSrc.includes('@astrojs/mdx'), 'no @astrojs/mdx in astro.config.mjs');
@@ -140,7 +162,6 @@ const CSS_PROPS = [
 let cssContent = indexHtml;
 const astroDir = join(DIST, '_astro');
 if (existsSync(astroDir)) {
-  const { readdirSync } = await import('fs');
   const cssFiles = readdirSync(astroDir).filter(f => f.endsWith('.css'));
   for (const f of cssFiles) {
     cssContent += readFileSync(join(astroDir, f), 'utf8');
@@ -174,7 +195,7 @@ assert(postHtml.includes('<meta name="description"'), 'post meta description');
 assert(postHtml.includes('Mnemra is a context layer'), 'post body content');
 // Hero image: check for optimized image in _astro/
 const astroFiles = existsSync(astroDir)
-  ? (await import('fs')).readdirSync(astroDir).filter(f => f.includes('hello-hero'))
+  ? readdirSync(astroDir).filter(f => f.includes('hello-hero'))
   : [];
 assert(astroFiles.length > 0, `hero image optimized (found: ${astroFiles.join(', ')})`);
 // Hero image: must render as <picture> element with avif + webp sources (spec Scenario "Blog post renders with image")
@@ -206,6 +227,26 @@ const draftInIndex = existsSync(join(DIST, 'blog', 'index.html'))
 assert(buildWithDraft.status === 0, 'build succeeds with draft post');
 assert(!draftExists, 'draft post not in dist/blog/');
 assert(!draftInIndex, 'draft post not in blog index');
+
+// The draft still exists on disk and in this build's dist/ right now — the
+// only point in this harness where a genuine draft is present to leak.
+// Checking "no leaked draft" anywhere else (e.g. after this section cleans
+// up) can never fail no matter how broken the feed's draft filtering is,
+// because nothing remains that could leak (Warden review of #3560, H1).
+const draftRssPath = join(DIST, 'rss.xml');
+const draftRssXml = existsSync(draftRssPath) ? readFileSync(draftRssPath, 'utf8') : null;
+assert(
+  draftRssXml !== null && !draftRssXml.includes('/blog/__draft-test/') && !draftRssXml.includes('Draft Test Post'),
+  'RSS feed excludes the draft post (no link, no title) while it still exists on disk',
+  draftRssXml === null ? 'dist/rss.xml does not exist' : ''
+);
+
+const draftChildSitemaps = loadChildSitemaps(join(DIST, 'sitemap-index.xml'));
+const draftLeakedInSitemap = draftChildSitemaps.some(({ xml }) => xml.includes('__draft-test'));
+assert(
+  draftChildSitemaps.length > 0 && !draftLeakedInSitemap,
+  'sitemap excludes the draft post while it still exists on disk'
+);
 
 // Cleanup draft post and rebuild to restore state
 rmSync(draftPost);
@@ -377,6 +418,8 @@ if (await isPortInUse(PREVIEW_PORT)) {
       await checkContentType('/blog/', 'text/html', 'GET /blog/ returns 200 text/html');
       await checkContentType('/blog/hello-mnemra/', 'text/html', 'GET /blog/hello-mnemra/ returns 200 text/html');
       await checkContentType('/favicon.png', 'image/png', 'GET /favicon.png returns 200 image/png');
+      await checkContentType('/rss.xml', 'application/xml', 'GET /rss.xml returns 200 application/xml');
+      await checkContentType('/sitemap-index.xml', 'application/xml', 'GET /sitemap-index.xml returns 200 application/xml');
 
       // ─── 10. Back-link navigation ─────────────────────────────────────────────
       console.log('\n[10] Blog back-link resolves');
@@ -398,6 +441,190 @@ if (await isPortInUse(PREVIEW_PORT)) {
     await reapPreviewProcess();
   }
 }
+
+// ─── 12. RSS feed ───────────────────────────────────────────────────────────
+
+console.log('\n[12] RSS feed');
+
+// Astro's own build output is ground truth for "published" (slug + draft
+// status), rather than a hand-rolled reimplementation of Astro's frontmatter
+// parsing and glob-loader slug derivation. Warden's review of #3560 (M1)
+// measured 7 frontmatter forms Astro treats as a draft that a regex-based
+// reader didn't (True/TRUE, a trailing comment, CRLF, a BOM, a leading blank
+// line, TOML syntax), plus slug rules (github-slugger, a `slug:` field) a
+// filename-based reader doesn't reproduce. dist/client/blog/<slug>/index.html
+// only exists for a post Astro actually published, by construction — this
+// reuses that fact instead of re-deriving it.
+//
+// This set backs "every published post is present" in both feeds below. It
+// does NOT cover "no draft leaks": by this point sections [6]-[8] have
+// already rebuilt the clean, draft-free state, so nothing remains here that
+// could leak. That coverage runs in section [6] instead, against the seeded
+// __draft-test post while it still exists on disk and in dist/.
+// Recurse: [...slug].astro is a rest-param route, so a post's slug (and its
+// dist/ directory) can be nested (e.g. a post at src/content/blog/sub/foo.md
+// builds dist/client/blog/sub/foo/index.html). A single-level readdirSync
+// would silently drop any such post from expectedPostUrls rather than fail
+// loud on it.
+function collectPostSlugs(dir, relPath) {
+  const out = [];
+  if (existsSync(join(dir, 'index.html'))) out.push(relPath);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) out.push(...collectPostSlugs(join(dir, entry.name), `${relPath}/${entry.name}`));
+  }
+  return out;
+}
+const blogDistDir = join(DIST, 'blog');
+const publishedSlugs = readdirSync(blogDistDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .flatMap((entry) => collectPostSlugs(join(blogDistDir, entry.name), entry.name));
+assert(publishedSlugs.length > 0, 'sanity: at least one published post found in dist/blog/ to check feeds against');
+const expectedPostUrls = new Set(publishedSlugs.map((slug) => `https://mnemra.dev/blog/${slug}/`));
+
+assert(existsSync(join(DIST, 'rss.xml')), 'dist/rss.xml exists');
+
+const rssXml = readFileSync(join(DIST, 'rss.xml'), 'utf8');
+const $rss = cheerio.load(rssXml, { xmlMode: true });
+// cheerio parses markup; it does not validate against the RSS 2.0 spec. This
+// only checks the shape this harness depends on elsewhere, not conformance.
+assert(
+  $rss('rss').length === 1 && $rss('channel').length === 1,
+  'dist/rss.xml has exactly one <rss><channel> root (structural check, not RSS-spec validation)'
+);
+
+const $blogIndexHtml = cheerio.load(blogIndex);
+const blogIndexTitle = $blogIndexHtml('title').first().text().trim();
+const blogIndexDescription = $blogIndexHtml('meta[name="description"]').attr('content') || '';
+const channelTitle = $rss('channel > title').first().text().trim();
+const channelDescription = $rss('channel > description').first().text().trim();
+assert(
+  channelTitle === blogIndexTitle,
+  'RSS channel title equals the blog index <title>',
+  `channel="${channelTitle}" page="${blogIndexTitle}"`
+);
+assert(
+  channelDescription === blogIndexDescription,
+  'RSS channel description equals the blog index meta description',
+  `channel="${channelDescription}" page="${blogIndexDescription}"`
+);
+
+const rssItems = $rss('item').toArray();
+const rssItemLinks = new Set(rssItems.map((el) => $rss(el).find('link').first().text().trim()));
+
+const missingFromRss = [...expectedPostUrls].filter((url) => !rssItemLinks.has(url));
+const leakedInRss = [...rssItemLinks].filter((url) => !expectedPostUrls.has(url));
+assert(
+  missingFromRss.length === 0 && leakedInRss.length === 0,
+  'RSS item links equal published-post URLs exactly',
+  `missing=[${missingFromRss.join(', ')}] unexpected=[${leakedInRss.join(', ')}]`
+);
+
+const rssItemsWellFormed = rssItems.length > 0 && rssItems.every((el) => {
+  const $el = $rss(el);
+  return $el.find('title').text().trim().length > 0
+    && $el.find('description').text().trim().length > 0
+    && $el.find('pubDate').text().trim().length > 0;
+});
+assert(rssItemsWellFormed, 'every RSS item has a non-empty title, description and pubDate');
+
+// Page date text is formatted via toLocaleDateString('en-US', { year:
+// 'numeric', month: 'short', day: '2-digit', timeZone: 'UTC' }) in both blog
+// pages (see formatDate() in blog/index.astro and blog/[...slug].astro) —
+// e.g. "Apr 28, 2026". That explicit timeZone: 'UTC' is what makes the page
+// side UTC, not an assumption about the build host's local zone. Parsed here
+// against fixed fields rather than re-parsed through `Date`, whose parsing
+// of a bare "Mon DD, YYYY" string is locale/timezone dependent and would
+// defeat an "in UTC" comparison.
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function parsePageDate(text) {
+  const match = text.trim().match(/^([A-Za-z]{3})\s+(\d{2}),\s+(\d{4})$/);
+  if (!match) return null;
+  const [, mon, day, year] = match;
+  const month = MONTH_ABBR.indexOf(mon);
+  if (month === -1) return null;
+  return { year: Number(year), month, day: Number(day) };
+}
+// RSS pubDate is RFC-822 with an explicit "GMT" zone (see rss.xml.ts), so
+// `Date` parses it unambiguously; reading back the UTC fields avoids any
+// dependency on the host's local timezone.
+function parseRssPubDate(text) {
+  const d = new Date(text);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+}
+
+for (const el of rssItems) {
+  const $el = $rss(el);
+  const link = $el.find('link').first().text().trim();
+  const itemTitle = $el.find('title').text().trim();
+  const itemDescription = $el.find('description').text().trim();
+  const itemPubDate = $el.find('pubDate').text().trim();
+
+  const postFile = distPathForPostUrl(link);
+  if (!existsSync(postFile)) {
+    fail(`RSS item content matches its post page (${link})`, `post page not found at ${postFile}`);
+    continue;
+  }
+  const $post = cheerio.load(readFileSync(postFile, 'utf8'));
+  const pageTitle = $post('h1').first().text().trim();
+  const pageDescription = $post('meta[name="description"]').attr('content') || '';
+  const pageDateText = $post('.post-meta').first().text().trim();
+
+  assert(
+    itemTitle === pageTitle,
+    `RSS item title matches post <h1> (${link})`,
+    `item="${itemTitle}" page="${pageTitle}"`
+  );
+  assert(
+    itemDescription === pageDescription,
+    `RSS item description matches post meta description (${link})`,
+    `item="${itemDescription}" page="${pageDescription}"`
+  );
+
+  const pageDate = parsePageDate(pageDateText);
+  const rssDate = parseRssPubDate(itemPubDate);
+  assert(
+    pageDate !== null
+      && rssDate.year === pageDate.year
+      && rssDate.month === pageDate.month
+      && rssDate.day === pageDate.day,
+    `RSS item pubDate is the same UTC calendar date as the post page (${link})`,
+    `item="${itemPubDate}" page="${pageDateText}"`
+  );
+}
+
+// A substring check on the tag only proves *a* rss+xml alternate link is
+// somewhere in the markup — it would still pass on a wrong or typo'd href.
+// Parse and assert the href value, since this href is hand-duplicated across
+// three files with no shared layout.
+function rssAutodiscoveryHref(html) {
+  const $ = cheerio.load(html);
+  return $('link[rel="alternate"][type="application/rss+xml"]').attr('href');
+}
+assert(rssAutodiscoveryHref(indexHtml) === '/rss.xml', 'RSS autodiscovery link on landing page points at /rss.xml');
+assert(rssAutodiscoveryHref(blogIndex) === '/rss.xml', 'RSS autodiscovery link on blog index points at /rss.xml');
+assert(rssAutodiscoveryHref(postHtml) === '/rss.xml', 'RSS autodiscovery link on a blog post points at /rss.xml');
+
+// ─── 13. Sitemap ────────────────────────────────────────────────────────────
+
+console.log('\n[13] Sitemap');
+
+assert(existsSync(join(DIST, 'sitemap-index.xml')), 'dist/sitemap-index.xml exists');
+
+// Pool every child sitemap's <url><loc> entries — @astrojs/sitemap may
+// shard output across more than one file as the site grows.
+const childSitemaps = loadChildSitemaps(join(DIST, 'sitemap-index.xml'));
+const sitemapLocs = childSitemaps.flatMap(({ xml }) => {
+  const $child = cheerio.load(xml, { xmlMode: true });
+  return $child('url > loc').toArray().map((el) => $child(el).text().trim());
+});
+
+assert(sitemapLocs.includes('https://mnemra.dev/'), 'sitemap lists the site root');
+const missingFromSitemap = [...expectedPostUrls].filter((url) => !sitemapLocs.includes(url));
+assert(
+  missingFromSitemap.length === 0,
+  'sitemap lists every published post URL',
+  missingFromSitemap.length > 0 ? `missing: ${missingFromSitemap.join(', ')}` : ''
+);
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
