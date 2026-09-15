@@ -22,7 +22,9 @@ gh api repos/mnemra/mnemra.dev/commits/<sha>/check-runs \
   --jq '.check_runs[] | {name, conclusion}'
 ```
 
-**There is no GitHub Actions CI in this repo.** The Workers Build is the only automated check, and it runs *after* merge — by which point the result is already live. `just check` on your branch is therefore the *only* pre-merge gate that exists. Nothing else will catch a break for you.
+**There is no GitHub Actions CI in this repo.** Workers Builds also builds every branch pushed to GitHub, so a PR head carries a `Workers Builds: mnemradev` check before merge — but that build only proves the site compiles. It runs neither `astro check` nor the verify harness, and no status check is required to merge. `just check` on your branch is therefore the only pre-merge gate that runs those. Nothing else will catch a break for you.
+
+**Pushing a branch must not publish it.** `wrangler.jsonc` sets `"preview_urls": false`. Without it, every branch build uploads a version reachable at a public, unauthenticated `workers.dev` preview URL whose alias is guessable from the branch name, so pushing an unreviewed draft would put it online before anyone merged it (measured 2026-09-15, #3606). Keep that line; the Cloudflare dashboard toggle is overwritten by the next deploy if the file disagrees.
 
 Both this repo and `mnemra-core` land by **rebase-merge only**. Squashing happens in the worktree before the push, one delivery per commit, never on the forge. The repo settings and this repo's `protect-main` ruleset allow no other merge method, so a squash or merge-commit button isn't available to fall back on.
 
