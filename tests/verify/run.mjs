@@ -129,6 +129,29 @@ assert(
     : `preview_urls is ${JSON.stringify(wranglerConfig.preview_urls)}`,
 );
 
+// `wrangler deploy` does not read wrangler.jsonc directly: the Astro adapter
+// writes .wrangler/deploy/config.json, which redirects to a generated config.
+// Check what is actually deployed too, so a root wrangler.json (which Wrangler
+// prefers over wrangler.jsonc), a per-env override, or an adapter change that
+// drops the key cannot leave the source check green while previews come back.
+let deployedConfig = null;
+let deployedConfigError = '';
+try {
+  const redirectPath = join(ROOT, '.wrangler', 'deploy', 'config.json');
+  const redirect = JSON.parse(readFileSync(redirectPath, 'utf8'));
+  const generatedPath = resolve(dirname(redirectPath), redirect.configPath);
+  deployedConfig = JSON.parse(readFileSync(generatedPath, 'utf8'));
+} catch (e) {
+  deployedConfigError = e.message;
+}
+assert(
+  deployedConfig !== null && deployedConfig.preview_urls === false,
+  'generated deploy config sets "preview_urls": false (what wrangler deploy actually reads)',
+  deployedConfig === null
+    ? `could not read the generated deploy config: ${deployedConfigError}`
+    : `preview_urls is ${JSON.stringify(deployedConfig.preview_urls)}`,
+);
+
 const indexHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
 const ANALYTICS_DOMAINS = ['plausible.io', 'googletagmanager.com', 'google-analytics.com', 'usefathom.com', 'mixpanel.com', 'posthog.com'];
 for (const domain of ANALYTICS_DOMAINS) {
