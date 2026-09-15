@@ -77,6 +77,58 @@ const configSrc = readFileSync(join(ROOT, 'astro.config.mjs'), 'utf8');
 assert(!configSrc.includes('@astrojs/mdx'), 'no @astrojs/mdx in astro.config.mjs');
 assert(configSrc.includes("output: 'static'"), "astro.config.mjs declares output: 'static'");
 
+// #3606: without "preview_urls": false, every pushed branch is served at a
+// public, unauthenticated workers.dev preview URL. Wrangler applies the flag
+// only on `wrangler deploy` from main, so deleting this line would silently
+// re-publish every retained preview alias at the next deploy. The file is
+// parsed (JSONC comments stripped outside strings) rather than grepped, and a
+// file that fails to parse fails this check instead of passing it.
+function stripJsonComments(src) {
+  let out = '';
+  let inString = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (inString) {
+      out += c;
+      if (c === '\\') {
+        out += next ?? '';
+        i++;
+      } else if (c === '"') {
+        inString = false;
+      }
+    } else if (c === '"') {
+      inString = true;
+      out += c;
+    } else if (c === '/' && next === '/') {
+      while (i < src.length && src[i] !== '\n') i++;
+      out += '\n';
+    } else if (c === '/' && next === '*') {
+      i += 2;
+      while (i < src.length && !(src[i] === '*' && src[i + 1] === '/')) i++;
+      i++;
+    } else {
+      out += c;
+    }
+  }
+  return out;
+}
+
+let wranglerConfig = null;
+let wranglerParseError = '';
+try {
+  wranglerConfig = JSON.parse(stripJsonComments(readFileSync(join(ROOT, 'wrangler.jsonc'), 'utf8')));
+} catch (e) {
+  wranglerParseError = e.message;
+}
+assert(
+  wranglerConfig !== null && wranglerConfig.preview_urls === false,
+  'wrangler.jsonc sets "preview_urls": false (a pushed branch is not served at a public preview URL)',
+  wranglerConfig === null
+    ? `could not parse wrangler.jsonc: ${wranglerParseError}`
+    : `preview_urls is ${JSON.stringify(wranglerConfig.preview_urls)}`,
+);
+
 const indexHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
 const ANALYTICS_DOMAINS = ['plausible.io', 'googletagmanager.com', 'google-analytics.com', 'usefathom.com', 'mixpanel.com', 'posthog.com'];
 for (const domain of ANALYTICS_DOMAINS) {
