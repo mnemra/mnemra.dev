@@ -25,8 +25,9 @@ astro-check:
 verify: build
     npm run verify
 
-# The only pre-merge check this repo has — there is no CI; the Cloudflare
-# Workers Build runs after merge, by which point it's already live.
+# The only pre-merge check that runs astro check and the verify harness —
+# there is no CI, and the Cloudflare Workers Build on a pushed branch only
+# proves the site compiles.
 [doc("Full local gate. Run this before every PR.")]
 check: astro-check verify
 
