@@ -2,7 +2,7 @@
 import '../styles/ironworks.css';
 
 const repos = [
-  { label: 'mnemra/mnemra-core', url: 'https://github.com/mnemra/mnemra-core', blurb: 'The engine that runs Mnemra.' },
+  { label: 'mnemra/mnemra-core', url: 'https://github.com/mnemra/mnemra-core', blurb: 'The engine Mnemra will run on.' },
   { label: 'mnemra/governance', url: 'https://github.com/mnemra/governance', blurb: 'Governs how Mnemra is developed.' },
 ];
 ---
@@ -13,17 +13,17 @@ const repos = [
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Mnemra — context layer for MCP</title>
-  <meta name="description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
+  <meta name="description" content="Context and memory for agents and the people they work with. Nothing is released yet: Mnemra will be a single binary that agents reach over MCP. Apache-2.0.">
 
   <!-- Open Graph / social share -->
   <meta property="og:title" content="Mnemra — context layer for MCP">
-  <meta property="og:description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
+  <meta property="og:description" content="Context and memory for agents and the people they work with. Nothing is released yet: Mnemra will be a single binary that agents reach over MCP. Apache-2.0.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://mnemra.dev">
   <meta property="og:image" content="https://mnemra.dev/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mnemra — context layer for MCP">
-  <meta name="twitter:description" content="Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.">
+  <meta name="twitter:description" content="Context and memory for agents and the people they work with. Nothing is released yet: Mnemra will be a single binary that agents reach over MCP. Apache-2.0.">
 
   <!-- Fonts: Ironworks families from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,19 +63,23 @@ const repos = [
     <p class="pronunciation">pronounced NEM-ra</p>
 
     <div class="body-copy">
-      <p><strong>Context and memory for the agents and people working the same problems.</strong> Every session starts cold, so today each team building on agents writes its own way to carry context forward. Mnemra keeps context alive between sessions; it's meant to be that layer, built once, so each team doesn't rebuild it.</p>
-      <p>Agents reach it over MCP. Self-host is a single binary with Postgres built in, and scales out to your own Postgres when you need it. It's early yet: agent communication is the first piece being built. Apache-2.0.</p>
+      <p><strong>Context and memory for the agents and people working the same problems.</strong> Every session starts cold, so the orchestrating agent hand-loads the context again each time, and it drifts. Mnemra will keep that context alive between sessions; it's meant to be that layer, built once, so each team doesn't rebuild it.</p>
+      <p>Agents will reach it over MCP. Self-host is planned as a single binary with Postgres built in, one instance per team. Going past that changes more than where the data sits: that deployment needs its own Postgres, and a permissions model for work that crosses teams. We haven't worked out what else it takes. None of it has shipped yet; agent communication is the piece being built now. Apache-2.0.</p>
     </div>
 
     <a href="/blog" class="hero-blog-link">Read the blog &rarr;</a>
 
-    <ul class="fragments">
-      <li>Per-tenant isolation, mTLS, row-level security</li>
-      <li>No external services to run</li>
-    </ul>
+    <h2 class="eyebrow">Planned</h2>
+    <ol class="fragments">
+      <li>Agents addressing each other, and handing work between them.</li>
+      <li>Projects, tasks and repositories, so agents and people read one record of the work.</li>
+      <li>One MCP call returns an artifact's cross-session context, with hybrid search and typed links.</li>
+      <li>A first load of what a team already has, then ingest that keeps running.</li>
+      <li>Further out, reports over all of it, including ones you define and call as MCP tools.</li>
+    </ol>
 
     <div class="repos">
-      <div class="eyebrow">On GitHub</div>
+      <h2 class="eyebrow">On GitHub, no release yet</h2>
       <ul class="repo-list">
         {repos.map((repo) => (
           <li class="repo-list-item">
