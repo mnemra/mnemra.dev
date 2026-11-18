@@ -162,6 +162,8 @@ for (const domain of ANALYTICS_DOMAINS) {
 
 console.log('\n[3] Landing page DOM');
 
+const $landing = cheerio.load(indexHtml);
+
 assert(indexHtml.includes('<h1>MNEMRA</h1>'), 'h1 contains MNEMRA');
 assert(indexHtml.includes('pronounced NEM-ra'), 'pronunciation line present');
 
@@ -170,18 +172,124 @@ const h1Pos = indexHtml.indexOf('<h1>MNEMRA</h1>');
 const pronPos = indexHtml.indexOf('pronounced NEM-ra');
 assert(h1Pos < pronPos, 'pronunciation line after h1');
 
-assert(indexHtml.includes('Context Layer'), 'eyebrow text present');
+assert(indexHtml.includes('MCP Agentic Context Layer'), 'eyebrow text present');
 assert(indexHtml.includes('class="avatar"'), 'SVG avatar present');
 
-// Vision-first hero copy (locked, commit dc69637) — two prose paragraphs;
-// pin one distinctive fragment per paragraph rather than the whole block.
-assert(indexHtml.includes('keeps context alive between sessions'), 'hero para 1: persistent-context claim present');
-assert(indexHtml.includes('single binary with Postgres built in'), 'hero para 2: single-binary Postgres claim present');
+// Vision-first hero copy — two prose paragraphs; pin one distinctive fragment
+// per paragraph rather than the whole block.
+//
+// Each pin includes the forthcoming verb ("will keep", "will be") on
+// purpose: the tense is the load-bearing part of these strings, not the nouns.
+// Mnemra has no release — 0 tags and 0 releases on mnemra/mnemra-core — so a
+// present-tense edit of either sentence would claim a running product, and a
+// pin on the nouns alone would stay green through exactly that edit.
+assert(indexHtml.includes('will keep that context alive between sessions'), 'hero para 1: persistent-context claim, forthcoming tense');
+// Para 2 carries two pins because it carries two claims, and the second is the
+// limit on the first: the host embeds no database engine (mnemra-core P-0010
+// §Amendment 2026-10-19, DE1; brief Hard constraints, "single-process Postgres"
+// as amended by #4018), so the operator installs and runs Postgres and pgvector.
+// A copy edit that kept the single-binary claim and dropped the Postgres one
+// would be shading by omission, which is why the second pin exists.
+assert(indexHtml.includes('will be a single binary, one instance per team'), 'hero para 2: single-binary, one-instance-per-team claim, forthcoming tense');
+assert(indexHtml.includes('will need a Postgres server with pgvector that you install and run'), 'hero para 2: operator-run Postgres and pgvector stated beside the single-binary claim, forthcoming tense');
 
-// Fragments — fragment 1 dropped (redundant with hero lede); fragment 2 updated to self-host framing
+// Per-surface release status. Each separately-read surface says on its own that
+// nothing has shipped: a search result shows the meta description alone, and a
+// social card shows less, so one status line in the hero does not cover them.
+// Four surfaces, four pins — the meta's rides inside the meta checks below.
+// These are the sentences a later copy edit would delete without noticing.
+assert(indexHtml.includes('None of it has shipped yet'), 'hero: release-status statement present on its own surface');
+assert(indexHtml.includes('>Planned<'), 'feature list: forthcoming-status label present on its own surface');
+assert(indexHtml.includes('On GitHub, no release yet'), 'repos block: release-status statement present on its own surface');
+
+// Feature list — the intended features, one line each, in the order they ship.
+// This list is the page's densest run of product claims, and each item had to
+// be traced to a document in mnemra-core before it earned a line. Pin a
+// distinctive phrase per item, assert the positions strictly increase, and
+// assert the item count, so a reordered, dropped or added item fails loud and a
+// reworded one fails only where it changes its pinned phrase, rather than any
+// of them riding through on the label above.
+//
+// The order assertion outlives the label deliberately, so do not read it as
+// stale and delete it. The label used to read "Planned, in ship order" and now
+// reads "Planned": Peter's call (#3374/#3375), because the sources disagree on
+// the order INSIDE V0, so the page should not announce a sequence a reader
+// could hold him to. The items are still sequenced, and item 5 still says
+// "Further out" — dropping the announcement did not make the order arbitrary,
+// it made it unclaimed. A silent reshuffle would still put a later capability
+// in front of an earlier one, which is what this check exists to catch.
+//
+// Item 3 follows Peter's rulings of 2026-11-18 (#3374/#3375): ingestion comes
+// first and batch loading a team's existing history comes later, as a use of
+// the same pipeline; the item stays above one-call retrieval in this list; and
+// its text is Margin's wording, chosen verbatim, so do not edit it either.
+// The page is ahead of mnemra-core's product brief here. The brief still puts
+// a one-shot batch migration in V0 (`0.14.0`) and continuous ingest in V0.1
+// (`1.2.0`), until #3643 amends it. The ingestion spec
+// (`docs/specs/2026-07-16-ingestion-pipeline.md`) carries the same order: its
+// loader seam serves the `0.14.0` migrator first and the `1.2.0` watcher after.
+// Do not move the item down or reorder its two halves on the strength of
+// either unamended document.
+const SHIP_ORDER = [
+  ['whether the recipient is online or offline', 'list 1: agent-to-agent messaging'],
+  ['read one record of the work', 'list 2: projects, tasks and repositories'],
+  ['context current, then using it to batch load the history', 'list 3: ingestion first, then batch loading existing history'],
+  ['hybrid search and typed links', 'list 4: one-call context retrieval'],
+  ['Further out, reporting', 'list 5: reporting, marked as the furthest out'],
+];
+const shipOrderPositions = SHIP_ORDER.map(([phrase]) => indexHtml.indexOf(phrase));
+SHIP_ORDER.forEach(([phrase, label], i) => {
+  assert(shipOrderPositions[i] !== -1, `${label} present`, `phrase: "${phrase}"`);
+});
+assert(
+  shipOrderPositions.every((pos, i) => pos !== -1 && (i === 0 || pos > shipOrderPositions[i - 1])),
+  'feature list items appear in their intended order (positions strictly increase)',
+  `positions=[${shipOrderPositions.join(', ')}]`
+);
+const featureItemCount = $landing('ol.fragments li').length;
+assert(
+  featureItemCount === SHIP_ORDER.length,
+  `feature list has exactly ${SHIP_ORDER.length} items, one per pinned phrase (no added item)`,
+  `ol.fragments li count=${featureItemCount}`
+);
+
+// Claims cut on truth grounds (#3374, #3375), guarded against reintroduction.
+// Each was removed because no document in mnemra-core places it: mTLS has one
+// corpus hit, a "conscious non-decision" about a future registry credential;
+// per-tenant isolation is a stated non-goal for the open-source core; "no
+// external services to run" is stated nowhere and is silent on the external
+// model the generative placements call; "scales out" has no entry at any tier.
+// "Postgres built in" is the exception to "no document places it": the docs did
+// place it, until P-0010's 2026-10-19 amendment (#4018) moved Postgres to an
+// instance the operator runs and cancelled the bundling task (#3562, AE10).
+// That is a stronger reason than the one behind the older guard below, so these
+// get the same treatment rather than being merely deleted.
+//
+// These are absence checks, so they are only as good as the instrument, and
+// they are keyed on COPY rather than on raw markup: rendered text plus the meta
+// description, which are the two surfaces a claim can be reintroduced on. A
+// raw-HTML scan would also read Astro's hashed asset filenames, where a chance
+// substring would fail this for no reason. The positive control for the
+// extraction is the assertion directly below it, which finds a real string in
+// the same extracted copy — if the extraction broke, that one fails first.
+const CUT_CLAIMS = [
+  ['mTLS', 'no placement at any tier'],
+  ['Per-tenant isolation', 'stated non-goal for the open-source core'],
+  ['No external services to run', 'stated in no document; silent on the external model'],
+  ['scales out', 'no entry at any tier'],
+  ['as MCP tools', 'user reports run through the fixed report tools (P-0022, P-0021); never their own tool'],
+  ['Postgres built in', 'the host embeds no engine; the operator runs Postgres (P-0010 DE1 and AE10, #4018)'],
+];
+const landingCopy = [
+  $landing('body').text(),
+  $landing('title').text(),
+  $landing('meta[name="description"]').attr('content') || '',
+].join('\n').toLowerCase();
+assert(landingCopy.includes('context and memory'), 'sanity: landing copy extracted for the cut-claim guards below');
+for (const [claim, why] of CUT_CLAIMS) {
+  assert(!landingCopy.includes(claim.toLowerCase()), `cut claim absent: "${claim}"`, why);
+}
 assert(!indexHtml.includes('Persistent context across agent sessions'), 'fragment "Persistent context..." dropped (redundant with hero lede)');
-assert(indexHtml.includes('Per-tenant isolation, mTLS, row-level security'), 'fragment: per-tenant isolation present');
-assert(indexHtml.includes('No external services to run'), 'fragment: no external services to run present');
 
 // Subscribe CTA (was "Waitlist")
 assert(indexHtml.includes('action="https://buttondown.com/api/emails/embed-subscribe/peter.manahan"'), 'Buttondown form action');
@@ -201,24 +309,42 @@ assert(indexHtml.includes('href="https://github.com/mnemra"'), 'GitHub social li
 assert(indexHtml.includes('href="https://bsky.app/profile/mnemra.dev"'), 'Bluesky social link');
 assert(indexHtml.includes('href="https://www.linkedin.com/company/mnemra"'), 'LinkedIn social link');
 
-// Repo-list section (data-driven)
-assert(indexHtml.includes('>On GitHub<'), 'repo-list eyebrow "On GitHub" present');
+// Repo-list section (data-driven). The mnemra-core blurb is forthcoming-tense
+// for the same reason as the hero: nothing runs Mnemra today. The governance
+// blurb stays present tense because that repo does govern development now.
+assert(indexHtml.includes('>On GitHub, no release yet<'), 'repo-list eyebrow present, carrying the block status');
 assert(indexHtml.includes('href="https://github.com/mnemra/mnemra-core"') && indexHtml.includes('rel="noopener"'), 'mnemra-core repo link present (rel=noopener)');
 assert(indexHtml.includes('href="https://github.com/mnemra/governance"'), 'governance repo link present');
-assert(indexHtml.includes('The engine that runs Mnemra.'), 'mnemra-core blurb present');
+assert(indexHtml.includes('The engine Mnemra will run on.'), 'mnemra-core blurb present, forthcoming tense');
 assert(indexHtml.includes('Governs how Mnemra is developed.'), 'governance blurb present');
 
-// Meta tags — synced to current landing copy (description/og/twitter share one string)
-const META_DESCRIPTION = 'Context and memory for agents and the people they work with. Agents reach it over MCP; a single binary with Postgres built in, early yet. Apache-2.0.';
-assert(indexHtml.includes(`meta name="description" content="${META_DESCRIPTION}"`), 'meta description synced to current copy');
-assert(indexHtml.includes('og:title" content="Mnemra — context layer for MCP"'), 'og:title');
-assert(indexHtml.includes(`og:description" content="${META_DESCRIPTION}"`), 'og:description synced to current copy');
+// Meta tags. description / og:description / twitter:description carry one
+// shared string, checked two ways rather than by pinning the literal whole:
+// read the three attribute values and assert they are identical, then pin a
+// distinctive phrase inside the shared value. A whole-string pin breaks on a
+// comma and catches nothing real; these two together catch the edits that
+// matter — one of the three drifting out of sync, and the loss of the status
+// clause. This surface is read completely alone in a search result or a social
+// card, so "Nothing is released yet" is the only status such a reader gets.
+const metaDescription = $landing('meta[name="description"]').attr('content') || '';
+const ogDescription = $landing('meta[property="og:description"]').attr('content') || '';
+const twitterDescription = $landing('meta[name="twitter:description"]').attr('content') || '';
+assert(
+  metaDescription.length > 0 && metaDescription === ogDescription && metaDescription === twitterDescription,
+  'description, og:description and twitter:description are one shared string',
+  `description="${metaDescription}" og="${ogDescription}" twitter="${twitterDescription}"`
+);
+assert(metaDescription.includes('Nothing is released yet'), 'meta description: release-status statement present on its own surface');
+// The Postgres clause sits in the same pin as the single-binary claim on
+// purpose: on this surface nothing else tells the reader they run a database.
+assert(metaDescription.includes('will be a single binary that needs a Postgres you run'), 'meta description: forthcoming single-binary claim with the operator-run Postgres in the same clause');
+assert(metaDescription.includes('agents will reach Mnemra over MCP'), 'meta description: forthcoming MCP access claim');
+assert(indexHtml.includes('og:title" content="Mnemra — MCP context layer for agentic memory"'), 'og:title');
 assert(indexHtml.includes('og:type" content="website"'), 'og:type');
 assert(indexHtml.includes('og:url" content="https://mnemra.dev"'), 'og:url');
 assert(indexHtml.includes('og:image" content="https://mnemra.dev/og.png"'), 'og:image');
 assert(indexHtml.includes('twitter:card" content="summary_large_image"'), 'twitter:card');
-assert(indexHtml.includes('twitter:title" content="Mnemra — context layer for MCP"'), 'twitter:title');
-assert(indexHtml.includes(`twitter:description" content="${META_DESCRIPTION}"`), 'twitter:description synced to current copy');
+assert(indexHtml.includes('twitter:title" content="Mnemra — MCP context layer for agentic memory"'), 'twitter:title');
 
 // CSS custom properties — all Ironworks tokens
 const CSS_PROPS = [
